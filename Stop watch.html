@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Poppins:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #1f2937;
+            --card-bg: #374151;
+            --display-bg: #111827;
+            --primary-text: #f9fafb;
+            --secondary-text: #d1d5db;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --accent-blue: #60a5fa;
+            --accent-yellow: #facc15;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .display-area {
+            background-color: var(--display-bg);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .time-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--primary-text);
+        }
+        
+        .time-display .milliseconds {
+            font-size: 2rem;
+            color: var(--secondary-text);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #startStopBtn { background-color: var(--accent-green); }
+        #startStopBtn.stop { background-color: var(--accent-red); }
+        #lapBtn { background-color: var(--accent-blue); }
+        #resetBtn { background-color: var(--accent-yellow); color: #1f2937; }
+        
+        #soundToggle {
+            background-color: var(--secondary-text);
+            grid-column: span 2;
+        }
+        #soundToggle.active {
+            background-color: var(--accent-green);
+        }
+
+        .laps-area {
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+        }
+
+        .laps-area h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-align: center;
+            color: var(--secondary-text);
+        }
+        
+        .laps-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .lap-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: rgba(0,0,0,0.1);
+            font-size: 1rem;
+        }
+        
+        .lap-item:nth-child(even) {
+            background-color: rgba(0,0,0,0.2);
+        }
+
+        .lap-number {
+            font-weight: 600;
+            color: var(--secondary-text);
+        }
+
+        .lap-time {
+            color: var(--primary-text);
+        }
+
+        .no-laps {
+            text-align: center;
+            color: #9ca3af;
+            padding: 20px 0;
+        }
+        
+        /* For WebKit browsers */
+        .laps-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .laps-area::-webkit-scrollbar-track {
+            background: var(--display-bg);
+            border-radius: 10px;
+        }
+
+        .laps-area::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-text);
+            border-radius: 10px;
+            border: 2px solid var(--display-bg);
+        }
+
+        @media (max-width: 480px) {
+            .time-display {
+                font-size: 2.5rem;
+            }
+            .time-display .milliseconds {
+                font-size: 1.5rem;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="display-area">
+            <div class="time-display">
+                <span id="minutes">00</span>:<span id="seconds">00</span><span class="milliseconds">,<span id="milliseconds">00</span></span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="startStopBtn">▶ Start</button>
+            <button class="btn" id="lapBtn" disabled>⚑ Lap</button>
+            <button class="btn" id="resetBtn" disabled>⟲ Reset</button>
+            <button class="btn" id="soundToggle">🔊 Suara: OFF</button>
+        </div>
+
+        <div class="laps-area">
+            <h2>Laps</h2>
+            <ul class="laps-list" id="lapsList">
+                <li class="no-laps">Belum ada catatan lap.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <audio id="lapSound" src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT19O/j4e/j1A/jU5/s89/s83/ts7/tlA/sE2/sE6/sA+/sA9/rw+/ro9/rk+/rE+/bA+/bE9/bA9/bI+/bM+/bQ//bU//bY//ba//be//bi//bm+/bq//bu//by//b2//b6//b+///A//AD//AH//AL//AP//AT//AX//Ab//Af//Aj//Al//An//Aq//At//Aw//A0//A7//BA//BE//BG//BK//BN//BQ//BT//BW//Ba//Bd//Bg//Bj//Bm//Bq//Bt//Bw//B0//B3//CA//CD//CG//CK//CN//CQ//CT//CW//Ca//Cd//Cg//Cj//Cm//Cq//Ct//Cw//C0//C3//DA//DD//DG//DK//DN//DQ//DT//DW//Da//Dd//Dg//Dj//Dm//Dq//Dt//Dw//D0//D3//EA//ED//EG//EK//EN//EQ//ET//EW//Ea//Ed//Eg//Ej//Em//Eq//Et//Ew//E0//E3//FA//FD//FG//FK//FN//FQ//FT//FW//Fa//Fd//Fg//Fj//Fm//Fq//Ft//Fw//F0//F3//GA//GD//GG//GK//GN//GQ//GT//GW//Ga//Gd//Gg//Gj//Gm//Gq//Gt//Gw//G0//G3//HA//HD//HG//HK//HN//HQ//HT//HW//Ha//Hd//Hg//Hj//Hm//Hq//Ht//Hw//H0//H3//IA//ID//IG//IK//IN//IQ//IT//IW//Ia//Id//Ig//Ij//Im//Iq//It//Iw//I0//I3//JA//JD//JG//JK//JN//JQ//JT//JW//Ja//Jd//Jg//Jj//Jm//Jq//Jt//Jw//J0//J3//KA//KD//KG//KK//KN//KQ//KT//KW//Ka//Kd//Kg//Kj//Km//Kq//Kt//Kw//K0//K3//LA//LD//LG//LK//LN//LQ//LT//LW//La//Ld//Lg//Lj//Lm//Lq//Lt//Lw//L0//L3//MA//MD//MG//MK//MN//MQ//MT//MW//Ma//Md//Mg//Mj//Mm//Mq//Mt//Mw//M0//M3//NA//ND//NG//NK//NN//NQ//NT//NW//Na//Nd//Ng//Nj//Nm//Nq//Nt//Nw//N0//N3//OA//OD//OG//OK//ON//OQ//OT//OW//Oa//Od//Og//Oj//Om//Oq//Ot//Ow//O0//O3//PA//PD//PG//PK//PN//PQ//PT//PW//Pa//Pd//Pg//Pj//Pm//Pq//Pt//Pw//P0//P3//QA//QD//QG//QK//QN//QQ//QT//QW//Qa//Qd//Qg//Qj//Qm//Qq//Qt//Qw//Q0//Q3//RA//RD//RG//RK//RN//RQ//RT//RW//Ra//Rd//Rg//Rj//Rm//Rq//Rt//Rw//R0//R3//SA//SD//SG//SK//SN//SQ//ST//SW//Sa//Sd//Sg//Sj//Sm//Sq//St//Sw//S0//S3//TA//TD//TG//TK//TN//TQ//TT//TW//Ta//Td//Tg//Tj//Tm//Tq//Tt//Tw//T0//T3//UA//UD//UG//UK//UN//UQ//UT//UW//Ua//Ud//Ug//Uj//Um//Uq//Ut//Uw//U0//U3//VA//VD//VG//VK//VN//VQ//VT//VW//Va//Vd//Vg//Vj//Vm//Vq//Vt//Vw//V0//V3//WA//WD//WG//WK//WN//WQ//WT//WW//Wa//Wd//Wg//Wj//Wm//Wq//Wt//Ww//W0//W3//XA//XD//XG//XK//XN//XQ//XT//XW//Xa//Xd//Xg//Xj//Xm//Xq//Xt//Xw//X0//X3//YA//YD//YG//YK//YN//YQ//YT//YW//Ya//Yd//Yg//Yj//Ym//Yq//Yt//Yw//Y0//Y3//ZA//ZD//ZG//ZK//ZN//ZQ//ZT//ZW//Za//Zd//Zg//Zj//Zm//Zq//Zt//Zw//Z0//Z3//[A//[D//[G//[K//[N//[Q//[T//[W//[a//[d//[g//[j//[m//[q//[t//[w//[0//[3//\A//\D//\G//\K//\N//\Q//\T//\W//\a//\d//\g//\j//\m//\q//\t//\w//\0//\3//]A//]D//]G//]K//]N//]Q//]T//]W//]a//]d//]g//]j//]m//]q//]t//]w//]0//]3//^A//^D//^G//^K//^N//^Q//^T//^W//^a//^d//^g//^j//^m//^q//^t//^w//^0//^3//_A//_D//_G//_K//_N//_Q//_T//_W//_a//_d//_g//_j//_m//_q//_t//_w//_0//_3//`A//`D//`G//`K//`N//`Q//`T//`W//`a//`d//`g//`j//`m//`q//`t//`w//`0//`3//aA//aD//aG//aK//aN//aQ//aT//aW//aa//ad//ag//aj//am//aq//at//aw//a0//a3//bA//bD//bG//bK//bN//bQ//bT//bW//ba//bd//bg//bj//bm//bq//bt//bw//b0//b3//cA//cD//cG//cK//cN//cQ//cT//cW//ca//cd//cg//cj//cm//cq//ct//cw//c0//c3//dA//dD//dG//dK//dN//dQ//dT//dW//da//dd//dg//dj//dm//dq//dt//dw//d0//d3//eA//eD//eG//eK//eN//eQ//eT//eW//ea//ed//eg//ej//em//eq//et//ew//e0//e3//fA//fD//fG//fK//fN//fQ//fT//fW//fa//fd//fg//fj//fm//fq//ft//fw//f0//f3//gA//gD//gG//gK//gN//gQ//gT//gW//ga//gd//gg//gj//gm//gq//gt//gw//g0//g3//hA//hD//hG//hK//hN//hQ//hT//hW//ha//hd//hg//hj//hm//hq//ht//hw//h0//h3//iA//iD//iG//iK//iN//iQ//iT//iW//ia//id//ig//ij//im//iq//it//iw//i0//i3//jA//jD//jG//jK//jN//jQ//jT//jW//ja//jd//jg//jj//jm//jq//jt//jw//j0//j3//kA//kD//kG//kK//kN//kQ//kT//kW//ka//kd//kg//kj//km//kq//kt//kw//k0//k3//lA//lD//lG//lK//lN//lQ//lT//lW//la//ld//lg//lj//lm//lq//lt//lw//l0//l3//mA//mD//mG//mK//mN//mQ//mT//mW//ma//md//mg//mj//mm//mq//mt//mw//m0//m3//nA//nD//nG//nK//nN//nQ//nT//nW//na//nd//ng//nj//nm//nq//nt//nw//n0//n3//oA//oD//oG//oK//oN//oQ//oT//oW//oa//od//og//oj//om//oq//ot//ow//o0//o3//pA//pD//pG//pK//pN//pQ//pT//pW//pa//pd//pg//pj//pm//pq//pt//pw//p0//p3//qA//qD//qG//qK//qN//qQ//qT//qW//qa//qd//qg//qj//qm//qq//qt//qw//q0//q3//rA//rD//rG//rK//rN//rQ//rT//rW//ra//rd//rg//rj//rm//rq//rt//rw//r0//r3//sA//sD//sG//sK//sN//sQ//sT//sW//sa//sd//sg//sj//sm//sq//st//sw//s0//s3//tA//tD//tG//tK//tN//tQ//tT//tW//ta//td//tg//tj//tm//tq//tt//tw//t0//t3//uA//uD//uG//uK//uN//uQ//uT//uW//ua//ud//ug//uj//um//uq//ut//uw//u0//u3//vA//vD//vG//vK//vN//vQ//vT//vW//va//vd//vg//vj//vm//vq//vt//vw//v0//v3//wA//wD//wG//wK//wN//wQ//wT//wW//wa//wd//wg//wj//wm//wq//wt//ww//w0//w3//xA//xD//xG//xK//xN//xQ//xT//xW//xa//xd//xg//xj//xm//xq//xt//xw//x0//x3//yA//yD//yG//yK//yN//yQ//yT//yW//ya//yd//yg//yj//ym//yq//yt//yw//y0//y3//zA//zD//zG//zK//zN//zQ//zT//zW//za//zd//zg//zj//zm//zq//zt//zw//z0//z3//|A//|D//|G//|K//|N//|Q//|T//|W//|a//|d//|g//|j//|m//|q//|t//|w//|0//|3//~A//~D//~G//~K//~N//~Q//~T//~W//~a//~d//~g//~j//~m//~q//~t//~w//~0//~3// A// D// G// K// N// Q// T// W// a// d// g// j// m// q// t// w// 0// 3//"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            const millisecondsEl = document.getElementById('milliseconds');
+            const startStopBtn = document.getElementById('startStopBtn');
+            const lapBtn = document.getElementById('lapBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const soundToggleBtn = document.getElementById('soundToggle');
+            const lapsList = document.getElementById('lapsList');
+            const lapSound = document.getElementById('lapSound');
+
+            // State
+            let state = 'idle'; // 'idle', 'running', 'stopped'
+            let startTime = 0;
+            let elapsedTime = 0;
+            let lastLapTime = 0;
+            let animationFrameId = null;
+            let laps = [];
+            let soundEnabled = false;
+
+            // --- Core Functions ---
+            
+            function updateTime() {
+                const now = performance.now();
+                elapsedTime = now - startTime;
+                
+                displayTime(elapsedTime);
+                
+                if (state === 'running') {
+                    animationFrameId = requestAnimationFrame(updateTime);
+                }
+            }
+
+            function displayTime(time) {
+                const totalMilliseconds = Math.floor(time);
+                const totalSeconds = Math.floor(totalMilliseconds / 1000);
+                
+                const displayMilliseconds = Math.floor((totalMilliseconds % 1000) / 10);
+                const displaySeconds = totalSeconds % 60;
+                const displayMinutes = Math.floor(totalSeconds / 60);
+
+                minutesEl.textContent = String(displayMinutes).padStart(2, '0');
+                secondsEl.textContent = String(displaySeconds).padStart(2, '0');
+                millisecondsEl.textContent = String(displayMilliseconds).padStart(2, '0');
+            }
+
+            // --- Event Handlers ---
+
+            function handleStartStop() {
+                if (state === 'idle' || state === 'stopped') {
+                    // Start
+                    state = 'running';
+                    startTime = performance.now() - elapsedTime;
+                    animationFrameId = requestAnimationFrame(updateTime);
+                    updateUI();
+                } else if (state === 'running') {
+                    // Stop
+                    state = 'stopped';
+                    cancelAnimationFrame(animationFrameId);
+                    updateUI();
+                    playSound();
+                }
+            }
+
+            function handleLap() {
+                if (state !== 'running') return;
+                
+                const lapTime = elapsedTime - lastLapTime;
+                lastLapTime = elapsedTime;
+
+                laps.push({ lap: laps.length + 1, time: lapTime });
+                renderLaps();
+                playSound();
+            }
+
+            function handleReset() {
+                state = 'idle';
+                elapsedTime = 0;
+                lastLapTime = 0;
+                laps = [];
+                
+                cancelAnimationFrame(animationFrameId);
+                displayTime(0);
+                renderLaps();
+                updateUI();
+            }
+            
+            function handleSoundToggle() {
+                soundEnabled = !soundEnabled;
+                updateUI();
+            }
+            
+            // --- UI Update ---
+            
+            function updateUI() {
+                if (state === 'running') {
+                    startStopBtn.textContent = '⏹ Stop';
+                    startStopBtn.classList.add('stop');
+                    lapBtn.disabled = false;
+                    resetBtn.disabled = true;
+                } else if (state === 'stopped') {
+                    startStopBtn.textContent = '▶ Start';
+                    startStopBtn.classList.remove('stop');
+                    lapBtn.disabled = true;
+                    resetBtn.disabled = false;
+                } else { // idle
+                    startStopBtn.textContent = '▶ Start';
+                    startStopBtn.classList.remove('stop');
+                    lapBtn.disabled = true;
+                    resetBtn.disabled = true;
+                }
+                
+                soundToggleBtn.textContent = `🔊 Suara: ${soundEnabled ? 'ON' : 'OFF'}`;
+                soundToggleBtn.classList.toggle('active', soundEnabled);
+            }
+            
+            function renderLaps() {
+                lapsList.innerHTML = '';
+                if (laps.length === 0) {
+                    lapsList.innerHTML = '<li class="no-laps">Belum ada catatan lap.</li>';
+                    return;
+                }
+
+                laps.slice().reverse().forEach(lap => {
+                    const li = document.createElement('li');
+                    li.className = 'lap-item';
+                    
+                    const totalMilliseconds = Math.floor(lap.time);
+                    const totalSeconds = Math.floor(totalMilliseconds / 1000);
+                    const ms = Math.floor((totalMilliseconds % 1000) / 10);
+                    const sec = totalSeconds % 60;
+                    const min = Math.floor(totalSeconds / 60);
+
+                    li.innerHTML = `
+                        <span class="lap-number">Lap ${lap.lap}</span>
+                        <span class="lap-time">${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')},${String(ms).padStart(2, '0')}</span>
+                    `;
+                    lapsList.appendChild(li);
+                });
+            }
+
+            // --- Sound ---
+            function playSound() {
+                if (soundEnabled) {
+                    lapSound.currentTime = 0;
+                    lapSound.play().catch(error => console.error("Gagal memutar suara:", error));
+                }
+            }
+
+            // --- Keyboard Shortcuts ---
+            
+            function handleKeyPress(e) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    handleStartStop();
+                } else if (e.code === 'KeyL' || e.code === 'Keyl') {
+                    e.preventDefault();
+                    handleLap();
+                }
+            }
+
+            // --- Initial Setup ---
+            
+            startStopBtn.addEventListener('click', handleStartStop);
+            lapBtn.addEventListener('click', handleLap);
+            resetBtn.addEventListener('click', handleReset);
+            soundToggleBtn.addEventListener('click', handleSoundToggle);
+            window.addEventListener('keydown', handleKeyPress);
+
+            updateUI(); // Set initial button states
+        });
+    </script>
+
+</body>
+</html>
